@@ -36,8 +36,17 @@ class Column{
 	}
 }
 
+function weightedRandom(prob) {
+  let i, sum=0, r=Math.random();
+  for (i in prob) {
+    sum += prob[i];
+    if (r <= sum) return i;
+  }
+}
+
 class Game{
 	constructor(size, queens){
+		this.queens = queens;
 		this.size = size;
 		this.data = new Array();
 		for(let i = 0; i < size; i = i+1)
@@ -118,10 +127,11 @@ class Game{
 		return conflicts;
 	}
 
+	/*
 	change(col1, index1, index2){
 		this.data[col1].change(index1, index2);
 
-	}
+	}*/
 
 
 	simulatedAnnealing(){
@@ -162,6 +172,130 @@ class Game{
 		}
 	}
 
+	getQueens(){
+		return this.queens;
+	}
+
+	crossing(game2){
+		let random = Math.floor(Math.random()*this.getSize()); // arrumar
+
+		let q1 = this.getQueens();
+		let q2 = game2.getQueens();
+
+		//console.log(q1);
+		//console.log(q2);
+
+		let arr_child1 = [];
+		let arr_child2 = [];
+		
+		for(let i = 0; i < random; i = i + 1){
+			arr_child1.push(q1[i])
+			arr_child2.push(q2[i]);
+		} 
+
+		for(let i = random; i < this.getSize(); i = i + 1){
+			arr_child1.push(q2[i])
+			arr_child2.push(q1[i]);
+		}
+
+		//console.log(arr_child1);
+		//console.log(arr_child2);
+
+		return [arr_child1, arr_child2];
+	}
+
+
+	genetic(pop_len){
+		let population = [];
+		let avaliation = [];
+		let probabilities = [];
+		let childs = []
+		let childs_len = 0;
+		let iterations = 300;
+		//gera populacao
+		population.push(this);
+		for(let i = 0; i < pop_len-1; i = i + 1){
+			let random_array = [];
+			for(let j = 0; j<this.getSize(); j++){
+				random_array.push(Math.floor(Math.random()*this.getSize()));
+			}
+			population.push(new Game(this.getSize(), random_array));
+		}
+
+		//roleta
+		while(iterations-- > 0){
+
+
+			let sum = 0;
+			let conflicts = 0;
+			for(let i = 0; i < pop_len; i = i + 1){
+				conflicts = Math.exp(-population[i].getConflicts());
+				sum += conflicts;
+				avaliation.push(conflicts);
+			}
+
+			//vetor de prob
+			for(let j = 0; j < pop_len; j = j + 1){
+				probabilities.push(avaliation[j]/sum);	
+			}	
+
+			//console.log(population);
+			//console.log(avaliation);
+			//console.log(probabilities);
+
+			//selecao
+			let r1 = weightedRandom(probabilities);
+			let r2 = weightedRandom(probabilities);
+			//console.log(r1 + " " + r2);
+			let first = population[r1];
+			let second = population[r2];
+			//cruzamento
+			let ans = first.crossing(second);
+
+			//mutacao
+			let p;
+			p = Math.random();
+			if(p <= 0.1){
+				let random_value = Math.floor(Math.random()*this.getSize());
+				let random_index = Math.floor(Math.random()*this.getSize());
+				ans[0][random_index] = random_value;
+			}
+
+			p = Math.random();
+			if(p <= 0.1){
+				let random_value = Math.floor(Math.random()*this.getSize());
+				let random_index = Math.floor(Math.random()*this.getSize());
+				ans[1][random_index] = random_value;
+			}
+
+			childs.push(new Game(this.getSize(),ans[0]));
+			childs.push(new Game(this.getSize(),ans[1]));
+			childs_len += 2;
+
+			if(childs_len == pop_len){
+				population = childs;
+				//console.log(population);
+				childs = [];
+				childs_len = 0;
+			}
+			avaliation = [];
+			probabilities = [];
+		}
+
+		let max = -1;
+		let imax = -1;
+		for(let i = 0; i < pop_len; i = i + 1){
+			let conflicts = population[i].getConflicts();
+			if(max < conflicts){
+				max = conflicts;
+				imax = i;
+			}
+		}
+
+		console.log("conflics:" + max);
+		return population[imax];
+	}
+
 
 }
 
@@ -182,12 +316,14 @@ function render(game){
 	document.getElementById('principal').innerHTML=tabuleiro+"</table>";
 }
 
-
-
-let game = new Game(4,[0,2,1,0]);
+size = 4;
+let random_array = [];
+for(let j = 0; j<size; j++){
+	random_array.push(Math.floor(Math.random()*size));
+}
+let game = new Game(size,random_array);
 console.log(game.getConflicts());
 render(game);
-
 
 function next(){
 	game.simulatedAnnealing();
@@ -195,17 +331,6 @@ function next(){
 }
 
 function back(){
-	size = 4;
-	let random_col = Math.floor(Math.random() * size);
-	let queen = game.getData()[random_col].getQueen();
-
-	let move = Math.floor(Math.random() * size);
-	while(move == queen){
-		move = Math.floor(Math.random() * size);
-	}
-
-	game.getData()[random_col].change(queen, move);
-	console.log(game.getConflicts());
-	render(game);
+	render(game.genetic(10));
 
 }
