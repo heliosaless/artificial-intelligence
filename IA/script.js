@@ -76,8 +76,7 @@ function belongsTo(array, element){
 }
 
 
-var dict = new Map();
-function BFS(actual_array){
+function BFS(actual_array, dict){
 	let visited = [];
 	let queue = [];
 	
@@ -88,7 +87,7 @@ function BFS(actual_array){
 	queue.push(actual_array);
 
 	iterations = 0
-	while(queue.length != 0 && iterations < 200000){
+	while(queue.length != 0 && iterations < 10000){
 		actual_array = queue.shift();
 		console.log(actual_array);
 		let fails = failNumber(actual_array);
@@ -118,17 +117,17 @@ function BFS(actual_array){
 	return bestSolution;
 }
 
-var dict2 = new Map();
-function aStar(actual_array){
+function aStar(actual_array, dict2){
 
-	visited = [];
+	let iterations = 0;
+	let visited = [];
 	visited.push(actual_array);
-	fails = failNumber(actual_array);
+	let fails = failNumber(actual_array);
 	if(fails == 0) return actual_array;
 	g = 0;
 	
 
-	while(fails!=0){
+	while(fails!=0 && iterations < 10000){
 		let canMove = canMoveTo(actual_array);
 
 		let bestHeuristicValue = 1000;
@@ -152,6 +151,12 @@ function aStar(actual_array){
 		}
 		g = g + 1
 		actual_array = bestHeuristic;
+		if(actual_array === undefined){
+			console.log("actual array undefined");
+			return undefined;
+		}
+
+		iterations++;
 	}
 
 	return bestHeuristic;
@@ -160,8 +165,16 @@ function aStar(actual_array){
 
 function makeSolutionPath(dict, best_array, initial_array){
 	let solutionPath = [];
-	current = best_array;
+
+
+
+	let current = best_array;
 	solutionPath.unshift(current);
+	
+	if(equalArray(best_array, initial_array)){
+		return solutionPath;
+	}
+
 	while(!equalArray(dict.get(current),initial_array)){
 		solutionPath.unshift(dict.get(current));
 		current = dict.get(current);
@@ -189,24 +202,47 @@ function render(actual_array){
 	document.getElementById('principal').innerHTML=tabuleiro+"</table>";
 }
 
-
-
-//initial_array = randomState();
-initial_array = [1,2,3,9,4,6,7,5,8];
-render(initial_array);
-count = 0;
-//best_array = BFS(initial_array);
-best_array = aStar(initial_array);
-solutionPath = makeSolutionPath(dict2, best_array, initial_array);
+var actual_array;
+actual_array = [1,2,3,9,4,6,7,5,8];
+//actual_array = randomState();
+render(actual_array);
+var count = 0;
+var dict = new Map();
+var solutionPath;
 
 function next(){
 	if(count < solutionPath.length -1)	count = count + 1;
 	actual_array = solutionPath[count]
+	console.log(actual_array);
 	render(actual_array);
 }
 
 function back(){
 	if(count > 0)	count = count - 1;
 	actual_array = solutionPath[count]
+	render(actual_array);
+}
+
+function run_bfs(){
+	count = 0;
+	dict.clear();
+	solutionPath=[];
+	best_array = BFS(actual_array, dict);
+	if(best_array !== undefined) solutionPath = makeSolutionPath(dict, best_array, actual_array);
+	console.log("BFS end: " + best_array);
+}
+
+function run_astar(){
+	count = 0;
+	dict.clear();
+	solutionPath=[];
+	best_array = aStar(actual_array, dict);
+	if(best_array !== undefined) solutionPath = makeSolutionPath(dict, best_array, actual_array);
+	console.log("A* end: " + best_array);
+}
+
+function randomize(){
+	actual_array = randomState();
+	console.log("new actual array: " + actual_array);
 	render(actual_array);
 }

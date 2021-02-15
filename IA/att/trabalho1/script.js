@@ -191,7 +191,7 @@ function render(actual_array){
 
 
 
-//initial_array = randomState();
+//i nitial_array = randomState();
 initial_array = [1,2,3,9,4,6,7,5,8];
 render(initial_array);
 count = 0;
