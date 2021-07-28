@@ -135,9 +135,12 @@ class Game{
 
 
 	simulatedAnnealing(){
-		let C = 1
+		let C = 10
 		let iteration = 0;
-		while(this.getConflicts()!= 0 && iteration < 1000){
+		let lim = this.getConflicts();
+
+
+		while(this.getConflicts() != 0 && iteration < 99999){
 			iteration = iteration + 1;
 			let T = C/Math.sqrt(iteration);
 			let random_col = Math.floor(Math.random() * this.size);
@@ -148,28 +151,31 @@ class Game{
 				move = Math.floor(Math.random() * this.size);
 			}
 
-			//console.log(random_col);
-			//console.log("Queen: " + queen );
-			//console.log("Move: " + move) ;
+			//console.log("before");
+			//console.log(this.data[random_col].getQueen());
 
 			let before = this.getConflicts();
 			this.data[random_col].change(queen, move);
 			let after = this.getConflicts();
+			
+			//console.log("after");
+			//console.log(this.data[random_col].getQueen());
 
-			//console.log("Before:" + before);
-			//console.log("After:" + after);
 
-			if(before > after){
+			if(before < after){
 				let prob = Math.exp((before-after)/T);
+				//console.log(prob);
 				let random = Math.random();
 				if(random >= prob){
-					console.log("Retornou");
-					this.data[random_col].change(queen, move);
+					//console.log("voltou");
+					this.data[random_col].change(move, queen);
+					//console.log(this.data[random_col]);
 				}
 			}
 
-			console.log(this.getConflicts());
 		}
+
+		return this;
 	}
 
 	getQueens(){
@@ -211,7 +217,7 @@ class Game{
 		let probabilities = [];
 		let childs = []
 		let childs_len = 0;
-		let iterations = 300;
+		let iterations = 9999;
 		//gera populacao
 		population.push(this);
 		for(let i = 0; i < pop_len-1; i = i + 1){
@@ -292,7 +298,6 @@ class Game{
 			}
 		}
 
-		console.log("conflics:" + max);
 		return population[imax];
 	}
 
@@ -316,21 +321,40 @@ function render(game){
 	document.getElementById('principal').innerHTML=tabuleiro+"</table>";
 }
 
-size = 4;
-let random_array = [];
-for(let j = 0; j<size; j++){
-	random_array.push(Math.floor(Math.random()*size));
+function randomArray(size){
+	let random_array = [];
+	for(let j = 0; j<size; j++){
+		random_array.push(Math.floor(Math.random()*size));
+	}
+	return random_array
 }
-let game = new Game(size,random_array);
-console.log(game.getConflicts());
+
+size = 40;
+var random_array = randomArray(size);
+var game = new Game(size,random_array);
 render(game);
 
-function next(){
-	game.simulatedAnnealing();
+function annealing(){
+	game = game.simulatedAnnealing();
+	console.log("simulatedAnnealing() end");
 	render(game);
 }
 
-function back(){
-	render(game.genetic(10));
-
+function genetic(){
+	game = game.genetic(10);
+	console.log("genetic() end");
+	render(game);
 }
+
+function randomize(){
+	random_array = randomArray(size);
+	game = new Game(size, random_array);
+	render(game);
+}
+
+function confl(){
+	conflicts = game.getConflicts();
+	alert(conflicts);
+	console.log("Conflitos = " + conflicts);
+}
+
